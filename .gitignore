@@ -1,0 +1,7 @@
+/datasets/*
+/outputs/*
+/logs/*
+
+*.ipynb
+*.vs
+*.vscode

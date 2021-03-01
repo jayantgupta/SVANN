@@ -25,6 +25,7 @@ from itertools import product
 import numpy as np
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 from PIL import Image
+import json
 
 Image.MAX_IMAGE_PIXELS = 219494175 
 
@@ -35,20 +36,17 @@ import matplotlib.pyplot as plt
 # Funtion to reduce the shapefile polygon region to the study region.
 # The function joins the original polygon data to the county dataset (current study region).
 # The join filters the data to the study region.
-def preprocess():
-  # Import the polygon shapefile.
-  polygon_fp = "/Users/jayantgupta/Desktop/Wetland_Mapping/MN_shapefile_wetlands/MN_Wetlands_South.shp"
-  polygon_data = gpd.read_file(polygon_fp)
-
+def preprocess(polygon_path, boundary_path, out_path=None):
+  if out_path==None:
+    with open('config.json') as f:
+      out_path = json.load(f)['filepaths']['default_filtered_polygon']
+  polygon_data = gpd.read_file(polygon_path)
+  
   # Check the polygon data file.
   polygon_data.head()
   polygon_data.ATTRIBUTE.unique()
   # print(polygon_data.columns)
-
-  # Import the county boundary file.
-  county_boundary="/Users/jayantgupta/Desktop/Wetland_Mapping/shp_bdry_counties_in_minnesota/mn_county_boundaries.shp"
-  county_boundary_data=gpd.read_file(county_boundary)
-
+  county_boundary_data=gpd.read_file(boundary_path)
   county_boundary_data.head()
 
   # Select Hennepin and Ramsey county
@@ -80,7 +78,7 @@ def preprocess():
   print(len(polygons.index))
   print(len(polygons_with_county.index))
 
-  polygons_with_county.to_file("/Users/jayantgupta/Desktop/Wetland_Mapping/Filtered_boundary/polygons_hc_fc_alt.shp")
+  polygons_with_county.to_file(out_path + "/polygons_hc_fc_alt.shp")
   polygons_with_county.head()
 
 # Function to project the image from one reference system to another.
@@ -154,38 +152,41 @@ def binary_masking(in_path, out_path):
   img = Image.frombytes(mode='1', size=size, data=databytes)
   img.save(out_path)
 
-def mask_generation():
-  polygons_with_county = gpd.read_file("/Users/jayantgupta/Desktop/Wetland_Mapping/Filtered_boundary/polygons_hc_fc_alt.shp")
+def mask_generation(in_dir, polygon_path=None, out_dir=None):
+  if polygon_path==None:
+      polygon_path = json.load(open('config.json'))['filepaths']['default_filtered_polygon']
+  if out_dir==None:
+      out_dir = json.load(open('config.json'))['filepaths']['default_mask_folder']
+  polygons_with_county = gpd.read_file(polygon_path)
   get_locations(polygons_with_county)
   print(polygons_with_county.head())
-  _dir = '/Users/jayantgupta/Desktop/SV/' 
-  in_path = '/Users/jayantgupta/Desktop/SV/Hennepin_North' # input_filename.
-  img_dir = os.path.join(_dir, "Hennepin_North_Mask")
-  if os.path.exists(img_dir):
-    shutil.rmtree(img_dir)
-  os.makedirs(img_dir)
+  
+  if os.path.exists(out_dir):
+    shutil.rmtree(out_dir)
+  os.makedirs(out_dir)
   counter = 0
-  for filename in os.listdir(in_path):
+  for filename in os.listdir(in_dir):
     print(filename)
     if filename.endswith(".tif") is not True:
       continue
 #    folder = filename.split('.')[0]
-    out_path = os.path.join(img_dir, filename.split('.')[0] + "_reproject.tif")
-    image_reprojection(os.path.join(in_path, filename), out_path)
+    out_path = os.path.join(out_dir, filename.split('.')[0] + "_reproject.tif")
+    image_reprojection(os.path.join(in_dir, filename), out_path)
   
 #    poly_forested = polygons_with_county[polygons_with_county.WETLAND_TY == 'Freshwater Forested/Shrub Wetland']
 
-    cur_in_path = os.path.join(img_dir, filename.split('.')[0] + "_reproject.tif")
-    out_path = os.path.join(img_dir, filename.split('.')[0] + "_wetland.tif")
+    cur_in_path = os.path.join(out_dir, filename.split('.')[0] + "_reproject.tif")
+    out_path = os.path.join(out_dir, filename.split('.')[0] + "_wetland.tif")
     image_masking(cur_in_path, out_path, polygons_with_county)
   
-    binary_masking(out_path, os.path.join(img_dir, filename.split('.')[0] + "_mask.jpeg"))
+    binary_masking(out_path, os.path.join(out_dir, filename.split('.')[0] + "_mask.jpeg"))
     os.remove(cur_in_path)
     os.remove(out_path)
-#    counter += 1
-#    if counter == 2:
-#      break
 
 if __name__ == '__main__':
-#  preprocess() # Needs to be run once in the start to create the subset dataset.
-  mask_generation()
+  county_boundary = "/Users/jayantgupta/Desktop/Wetland_Mapping/shp_bdry_counties_in_minnesota/mn_county_boundaries.shp"   # input border shapefile
+  polygon_fp = "/Users/jayantgupta/Desktop/Wetland_Mapping/MN_shapefile_wetlands/MN_Wetlands_South.shp"         # input polygon shapefile
+  # preprocess(polygon_fp, county_boundary) # Needs to be run once in the start to create the subset dataset.
+  
+  imagery_dir = '/Users/jayantgupta/Desktop/SV/Hennepin_North'                           # input imagery tiles
+  mask_generation(imagery_dir)
