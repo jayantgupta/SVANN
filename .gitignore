@@ -1,8 +1,9 @@
 /datasets/*
 /outputs/*
 /logs/*
+.gitignore
 
-
+config.json
 
 *.ipynb
 *.vs
