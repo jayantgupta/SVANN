@@ -45,19 +45,19 @@ def read_file(path):
     
     print(coords.shape)
     
-    fig, ax = plt.subplots(1, 1, figsize=(9, 9))
+    _, ax = plt.subplots(1, 1, figsize=(9, 9))
     art = ax.scatter(coords[:,0], coords[:,1], s=10, c=GRVI_array, cmap='plasma')
-    plt.colorbar(art);
+    plt.colorbar(art)
     plt.title("GRVI") 
 
-    fig, ax = plt.subplots(1, 1, figsize=(9, 9))
+    _, ax = plt.subplots(1, 1, figsize=(9, 9))
     art = ax.scatter(coords[:,0], coords[:,1], s=10, c=VARI_array, cmap='plasma')
-    plt.colorbar(art);
+    plt.colorbar(art)
     plt.title("VARI")
     
-    fig, ax = plt.subplots(1, 1, figsize=(9, 9))
+    _, ax = plt.subplots(1, 1, figsize=(9, 9))
     art = ax.scatter(coords[:,0], coords[:,1], s=10, c=ExG_array, cmap='plasma')
-    plt.colorbar(art);
+    plt.colorbar(art)
     plt.title("ExG")
 
     # Computing the variogram here.
@@ -72,7 +72,7 @@ def read_file(path):
         
     # plot
     plt.figure()	
-    implot = plt.imshow(im)
+    plt.imshow(im)
     plt.scatter(coords[:,0], coords[:,1], s=3)
     plt.show()
 
@@ -122,22 +122,22 @@ def generate_rgb_mask(path):
     
     plt.subplots(1, 1, figsize=(9, 9))
     art = plt.imshow(np.asarray(ExG_array), cmap ='plasma')
-    plt.colorbar(art);
+    plt.colorbar(art)
     plt.title("ExG")
 
     plt.subplots(1, 1, figsize=(9, 9))
     art = plt.imshow(np.asarray(ExGR_array), cmap ='plasma')
-    plt.colorbar(art);
+    plt.colorbar(art)
     plt.title("ExGR")
     
     plt.subplots(1, 1, figsize=(9, 9))
     art = plt.imshow(np.asarray(GRVI_array), cmap ='plasma')
-    plt.colorbar(art);
+    plt.colorbar(art)
     plt.title("GRVI")
     
     plt.subplots(1, 1, figsize=(9, 9))
     art = plt.imshow(np.asarray(VARI_array), vmin=-1, vmax=1, cmap ='plasma')
-    plt.colorbar(art);
+    plt.colorbar(art)
     plt.title("VARI")
     plt.show()
 

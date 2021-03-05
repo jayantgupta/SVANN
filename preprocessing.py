@@ -161,7 +161,7 @@ def mask_generation(in_dir=json.load(open('config.json'))['filepaths']['input_im
   if os.path.exists(out_dir):
     shutil.rmtree(out_dir)
   os.makedirs(out_dir)
-  counter = 0
+  
   for filename in os.listdir(in_dir):
     print(filename)
     if filename.endswith(".tif") is not True:
