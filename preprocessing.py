@@ -36,10 +36,9 @@ import matplotlib.pyplot as plt
 # Funtion to reduce the shapefile polygon region to the study region.
 # The function joins the original polygon data to the county dataset (current study region).
 # The join filters the data to the study region.
-def preprocess(polygon_path, boundary_path, out_path=None):
-  if out_path==None:
-    with open('config.json') as f:
-      out_path = json.load(f)['filepaths']['default_filtered_polygon']
+def preprocess(polygon_path=json.load(open('config.json'))['filepaths']['input_polygon'], 
+               boundary_path=json.load(open('config.json'))['filepaths']['input_county_boundary'], 
+               out_path=json.load(open('config.json'))['filepaths']['default_filtered_polygon']):
   polygon_data = gpd.read_file(polygon_path)
   
   # Check the polygon data file.
@@ -152,11 +151,9 @@ def binary_masking(in_path, out_path):
   img = Image.frombytes(mode='1', size=size, data=databytes)
   img.save(out_path)
 
-def mask_generation(in_dir, polygon_path=None, out_dir=None):
-  if polygon_path==None:
-      polygon_path = json.load(open('config.json'))['filepaths']['default_filtered_polygon']
-  if out_dir==None:
-      out_dir = json.load(open('config.json'))['filepaths']['default_mask_folder']
+def mask_generation(in_dir=json.load(open('config.json'))['filepaths']['input_imagery_dir'] , 
+                    polygon_path=json.load(open('config.json'))['filepaths']['default_filtered_polygon'], 
+                    out_dir=json.load(open('config.json'))['filepaths']['default_mask_folder']):
   polygons_with_county = gpd.read_file(polygon_path)
   get_locations(polygons_with_county)
   print(polygons_with_county.head())
@@ -184,9 +181,5 @@ def mask_generation(in_dir, polygon_path=None, out_dir=None):
     os.remove(out_path)
 
 if __name__ == '__main__':
-  county_boundary = "/Users/jayantgupta/Desktop/Wetland_Mapping/shp_bdry_counties_in_minnesota/mn_county_boundaries.shp"   # input border shapefile
-  polygon_fp = "/Users/jayantgupta/Desktop/Wetland_Mapping/MN_shapefile_wetlands/MN_Wetlands_South.shp"         # input polygon shapefile
-  # preprocess(polygon_fp, county_boundary) # Needs to be run once in the start to create the subset dataset.
-  
-  imagery_dir = '/Users/jayantgupta/Desktop/SV/Hennepin_North'                           # input imagery tiles
-  mask_generation(imagery_dir)
+  preprocess()      # Needs to be run once in the start to create the subset dataset.
+  mask_generation()

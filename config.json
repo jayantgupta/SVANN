@@ -1,9 +1,11 @@
 {
-    "filepaths":
-    {
-        "default_mask_folder":"outputs/MN_raster_Hennepin_North_Mask",
-        "default_filtered_polygon":"outputs/MN_shapefile_filtered_polygon",
-        "default_weights":"outputs/2021_weights",
-        "default_pyobjects":"outputs/PYObjects"
-    }
+  "filepaths": {
+    "input_county_boundary": "/Users/jayantgupta/Desktop/Wetland_Mapping/shp_bdry_counties_in_minnesota/mn_county_boundaries.shp",
+    "input_polygon": "/Users/jayantgupta/Desktop/Wetland_Mapping/MN_shapefile_wetlands/MN_Wetlands_South.shp",
+    "input_imagery_dir": "/Users/jayantgupta/Desktop/SV/Hennepin_North",
+    "default_mask_folder": "outputs/MN_raster_Hennepin_North_Mask",
+    "default_filtered_polygon": "outputs/MN_shapefile_filtered_polygon",
+    "default_weights": "outputs/2021_weights",
+    "default_pyobjects": "outputs/PYObjects"
+  }
 }
