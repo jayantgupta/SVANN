@@ -1,10 +1,10 @@
 /datasets/*
 /outputs/*
 /logs/*
-.gitignore
 
+.gitignore
 config.json
 
-*.ipynb
+*.pyc
 *.vs
 *.vscode

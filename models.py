@@ -50,7 +50,7 @@ def UNetS(input_height, input_width, input_channels):
     model = tf.keras.Model(inputs=[inputs], outputs=[outputs])
     
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-    model.summary()
+    #model.summary()
 
     return model
 
@@ -112,6 +112,6 @@ def UNet(input_height, input_width, input_channels):
     
     model = tf.keras.Model(inputs=[inputs], outputs=[outputs])
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-    model.summary()
+    #model.summary()
 
     return model
