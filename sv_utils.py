@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 from PIL import Image, ImageMath
 from skgstat import Variogram, OrdinaryKriging
 import os
+import json
+
+from tqdm import tqdm
 
 os.environ["SKG_SUPPRESS"] = "true"
 
@@ -103,52 +106,46 @@ def generate_points_with_min_distance(n, shape, min_dist):
 #    print(coords[mask])
     return (coords[mask].astype(int))
 
-def generate_rgb_mask(path):
-    img = Image.open(path)
+def generate_index_channel(in_filename, index_type,
+                      in_path = json.load(open('config.json'))['filepaths']['input_imagery_dir'], 
+                      out_path = json.load(open('config.json'))['filepaths']['input_vi_dir']):
+    in_file = os.path.join(in_path, in_filename)
+    img = Image.open(in_file)
     Band_B, Band_G, Band_R = img.split()
-        
-    ExG_array = ImageMath.eval("(2*g)-r-b", r=Band_R, g=Band_G, b=Band_B)
-    #ExG_array.save("outputs/ExG_array.tif")
-    ExGR_array = ImageMath.eval("(4*g)-(1.4*float(r))-1", r=Band_R, g=Band_G, b=Band_B)
-    #ExGR_array.save("outputs/ExG_array.tif")
-    GRVI_array = ImageMath.eval("float(g-r)/float(g+r)", r=Band_R, g=Band_G, b=Band_B)
-    #GRVI_array.save("outputs/GRVI_array.tif")
-    VARI_array = ImageMath.eval("float(g-r)/float(g+r-b)", r=Band_R, g=Band_G, b=Band_B)
-    #VARI_array.save("outputs/VARI_array.tif")
     
-    plt.subplots(1, 1, figsize=(9, 9))
-    art = plt.imshow(img)
-    plt.title("RGB")
-    
-    plt.subplots(1, 1, figsize=(9, 9))
-    art = plt.imshow(np.asarray(ExG_array), cmap ='plasma')
-    plt.colorbar(art)
-    plt.title("ExG")
+    if not os.path.exists(out_path):
+        os.makedirs(out_path)
 
-    plt.subplots(1, 1, figsize=(9, 9))
-    art = plt.imshow(np.asarray(ExGR_array), cmap ='plasma')
-    plt.colorbar(art)
-    plt.title("ExGR")
+    # ImageMath expressions that calculate the RGB Index channels
+    if index_type == "ExG":
+        # Normalize RGB bands to generate a float image
+        Band_B_n = ImageMath.eval("float(b)/float(r+g+b)", r=Band_R, g=Band_G, b=Band_B)
+        Band_G_n = ImageMath.eval("float(g)/float(r+g+b)", r=Band_R, g=Band_G, b=Band_B)
+        Band_R_n = ImageMath.eval("float(r)/float(r+g+b)", r=Band_R, g=Band_G, b=Band_B)
+        index_array = ImageMath.eval("(2*g)-r-b", r=Band_R_n, g=Band_G_n, b=Band_B_n)
+    elif index_type == "ExGR":
+        index_array = ImageMath.eval("float(4*g)-(1.4*float(r))-1", r=Band_R, g=Band_G, b=Band_B)
+    elif index_type == "GRVI":
+        index_array = ImageMath.eval("float(g-r)/float(g+r)", r=Band_R, g=Band_G, b=Band_B)
+    elif index_type == "VARI":
+        index_array = ImageMath.eval("float(g-r)/float(g+r-b)", r=Band_R, g=Band_G, b=Band_B)
+        index_array = Image.fromarray(np.clip(np.asarray(index_array), -1, 1)) # Clip extremities
+    elif index_type == "CIVE":
+        index_array = ImageMath.eval("(0.441*float(r))-(0.811*float(g))+(0.385*float(b))+18.787", r=Band_R, g=Band_G, b=Band_B)
+
+    index_array.save(os.path.join(out_path, in_filename.split('.')[0] + "_" + index_type + ".tif"))
     
-    plt.subplots(1, 1, figsize=(9, 9))
-    art = plt.imshow(np.asarray(GRVI_array), cmap ='plasma')
-    plt.colorbar(art)
-    plt.title("GRVI")
-    
-    plt.subplots(1, 1, figsize=(9, 9))
-    art = plt.imshow(np.asarray(VARI_array), vmin=-1, vmax=1, cmap ='plasma')
-    plt.colorbar(art)
-    plt.title("VARI")
-    plt.show()
+    #plt.subplots(1, 1, figsize=(9, 9))
+    #art = plt.imshow(img)
+    #plt.title("RGB")
+    #
+    #plt.subplots(1, 1, figsize=(9, 9))
+    #art = plt.imshow(np.asarray(index_array), cmap ='plasma')
+    #plt.colorbar(art)
+    #plt.title(index_type)
+    #plt.show()
 
 if __name__ == '__main__':
     # read_file('datasets/MN_raster_Hennepin_North/120_23_13_01.tif')
-    # generate_rgb_mask('datasets/MN_raster_Hennepin_North/120_23_13_01.tif')
-    # generate_rgb_mask('datasets/MN_raster_Hennepin_North/120_23_13_04.tif') # wetland ~30%, lake
-    # generate_rgb_mask('datasets/MN_raster_Hennepin_North/120_23_22_01.tif') # vegetation ~50%, wetland ~10%
-    generate_rgb_mask('datasets/MN_raster_Hennepin_North/120_23_22_02.tif') # vegetation ~50%, wetland ~20%
-    # generate_rgb_mask('datasets/MN_raster_Hennepin_North/120_23_23_04.tif') # wetland ~60%
-    generate_rgb_mask('datasets/MN_raster_Hennepin_North/120_23_24_01.tif') # vegetation ~10%, wetland ~60%, lake
-    # generate_rgb_mask('datasets/MN_raster_Hennepin_North/120_23_24_04.tif') # vegetation ~30%, wetland ~60%
-    # generate_rgb_mask('datasets/MN_raster_Hennepin_North/120_23_27_02.tif') # vegetation ~40%, wetland ~60%
-    generate_rgb_mask('datasets/MN_raster_Hennepin_North/120_23_27_03.tif') # vegetation ~40%, wetland ~50%
+    for filename in tqdm(os.listdir(json.load(open('config.json'))['filepaths']['input_imagery_dir'])):
+        generate_index_channel(filename, "ExGR")
