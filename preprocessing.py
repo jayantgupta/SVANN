@@ -14,6 +14,7 @@ from shapely.geometry import box
 import geopandas as gpd
 from fiona.crs import from_epsg
 import pycrs
+from tqdm import tqdm
 # import gdal
 
 import os
@@ -85,6 +86,10 @@ def image_reprojection(in_path, out_path):
   # Reproject the raster file and save the new file.
   dst_crs = 'EPSG:4326'
 
+  out_dir = os.path.dirname(out_path)
+  if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
   with rasterio.open(in_path) as src:
     transform, width, height = calculate_default_transform(src.crs, dst_crs, src.width, src.height, *src.bounds)
     kwargs = src.meta.copy()
@@ -151,35 +156,34 @@ def binary_masking(in_path, out_path):
   img = Image.frombytes(mode='1', size=size, data=databytes)
   img.save(out_path)
 
-def mask_generation(in_dir=json.load(open('config.json'))['filepaths']['input_imagery_dir'] , 
+def mask_generation(in_dir_root=json.load(open('config.json'))['filepaths']['input_imagery_dir'],
+                    in_folder='',
                     polygon_path=json.load(open('config.json'))['filepaths']['default_filtered_polygon'], 
-                    out_dir=json.load(open('config.json'))['filepaths']['default_mask_folder']):
+                    out_dir=json.load(open('config.json'))['filepaths']['default_mask_dir']):
   polygons_with_county = gpd.read_file(polygon_path)
   get_locations(polygons_with_county)
   print(polygons_with_county.head())
   
-  if os.path.exists(out_dir):
-    shutil.rmtree(out_dir)
-  os.makedirs(out_dir)
-  
-  for filename in os.listdir(in_dir):
-    print(filename)
-    if filename.endswith(".tif") is not True:
+  current_dir = os.path.join(in_dir_root, in_folder)
+  for filename in tqdm(os.listdir(current_dir)):
+    in_file = os.path.join(current_dir, filename)
+    if os.path.isdir(in_file):
+      mask_generation(in_folder=os.path.join(in_folder, filename))  # Recursively call mask_generation for processing folders
+    if in_file.endswith(".tif") is not True:
       continue
-#    folder = filename.split('.')[0]
-    out_path = os.path.join(out_dir, filename.split('.')[0] + "_reproject.tif")
-    image_reprojection(os.path.join(in_dir, filename), out_path)
+    out_path = os.path.join(out_dir, os.path.join(in_folder, filename.split('.')[0]))
+    if os.path.exists(out_path + "_mask.jpeg"):
+      continue
+    reprojection_path = out_path + "_reproject.tif"
+    image_reprojection(in_file, reprojection_path)
   
-#    poly_forested = polygons_with_county[polygons_with_county.WETLAND_TY == 'Freshwater Forested/Shrub Wetland']
-
-    cur_in_path = os.path.join(out_dir, filename.split('.')[0] + "_reproject.tif")
-    out_path = os.path.join(out_dir, filename.split('.')[0] + "_wetland.tif")
-    image_masking(cur_in_path, out_path, polygons_with_county)
+    wetland_path = out_path + "_wetland.tif"
+    image_masking(reprojection_path, wetland_path, polygons_with_county)
   
-    binary_masking(out_path, os.path.join(out_dir, filename.split('.')[0] + "_mask.jpeg"))
-    os.remove(cur_in_path)
-    os.remove(out_path)
+    binary_masking(wetland_path, out_path + "_mask.jpeg")
+    os.remove(reprojection_path)
+    os.remove(wetland_path)
 
 if __name__ == '__main__':
-  preprocess()      # Needs to be run once in the start to create the subset dataset.
+  #preprocess()      # Needs to be run once in the start to create the subset dataset.
   mask_generation()
