@@ -93,9 +93,6 @@ def generate_mask_tiles(tile_width, tile_height,
                   continue
                 out_file = os.path.join(out_path, 'tile_{}-{}.jpeg'.format(int(col_i), int(row_i)))
                 if os.path.exists(out_file):
-                  img = Image.open(out_file)
-                  if img.width != tile_width or img.height != tile_height:
-                    os.remove(out_file)
                   continue
                 crop.save(out_file)
 
@@ -201,9 +198,6 @@ def get_locations(polygons):
   polygons['centroid'] = points
 
 def image_masking(in_path, out_path, mask):
-  if not os.path.exists(out_path.split('.')[0]):
-    os.makedirs(out_path.split('.')[0])
-
   with rasterio.open(in_path) as src_tr:
     out_crop, out_transform = rasterio.mask.mask(src_tr, mask.geometry, crop=False)
     out_meta = src_tr.meta
@@ -262,8 +256,8 @@ def mask_generation(in_dir_root=json.load(open('config.json'))['filepaths']['inp
     if in_file.endswith(".tif") is not True:
       continue
     out_path = os.path.join(out_dir, os.path.join(in_folder, filename.split('.')[0]))
-    #if os.path.exists(out_path + "_mask.jpeg"):
-    #  continue
+    if os.path.exists(out_path + ".jpeg"):
+      continue
     reprojection_path = os.path.join(reprojection_dir, in_folder)
     reprojection_file = os.path.join(reprojection_path, filename)
     image_reprojection(in_file, reprojection_file)
@@ -277,4 +271,4 @@ def mask_generation(in_dir_root=json.load(open('config.json'))['filepaths']['inp
 if __name__ == '__main__':
   #preprocess()      # Needs to be run once in the start to create the subset dataset.
   #mask_generation()
-  partition_inputs(1024, 1024)
+  partition_inputs(2048, 2048)
