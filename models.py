@@ -239,7 +239,7 @@ class MaxUnpooling2D(Layer):
 
     def call(self, inputs, output_shape=None):
         updates = inputs[0]
-        mask    = tf.cast(inputs[1], dtype=tf.int64)
+        mask    = tf.dtypes.cast(inputs[1], dtype=tf.int64)
         ksize   = [1, self.up_size[0], self.up_size[1], 1]
         return unpool(updates, mask, ksize)
 
